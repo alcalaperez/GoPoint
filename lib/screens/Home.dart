@@ -8,6 +8,7 @@ import 'package:gopoint/persistence/model/Route.dart';
 import 'package:gopoint/screens/ListRoutes.dart';
 import '../requests/google_maps_requests.dart';
 import 'ListPoints.dart';
+import 'package:permission_handler/permission_handler.dart';
 
 class MyHomePage extends StatefulWidget {
   MyHomePage({Key key, this.title}) : super(key: key);
@@ -44,6 +45,7 @@ class _MapState extends State<Map> with TickerProviderStateMixin {
     Icons.directions_walk,
     Icons.directions_bike
   ];
+  final PermissionHandler _permissionHandler = PermissionHandler();
 
   @override
   void initState() {
@@ -94,29 +96,41 @@ class _MapState extends State<Map> with TickerProviderStateMixin {
                               size: 30.0,
                               color: Colors.white,
                             ),
-                            Text("Routes", style: TextStyle(color: Colors.white),),
+                            Text(
+                              "Routes",
+                              style: TextStyle(color: Colors.white),
+                            ),
                           ],
                         ),
                         onTap: () async {
                           String nameRoute = await Navigator.push(
                               context,
-                              MaterialPageRoute(builder: (context) => RoutesList(origin: _initialPosition,
-                                  destiny: _markers.length > 1
-                                      ? LatLng(
-                                      _markers.last.position.latitude,
-                                      _markers.last.position.longitude)
-                                      : null)));
+                              MaterialPageRoute(
+                                  builder: (context) => RoutesList(
+                                      origin: _initialPosition,
+                                      destiny: _markers.length > 1
+                                          ? LatLng(
+                                              _markers.last.position.latitude,
+                                              _markers.last.position.longitude)
+                                          : null)));
 
-                          if(nameRoute != "") {
-                            Routes route = await DBProviderRoutes().getRoute(nameRoute);
+                          if (nameRoute != "") {
+                            Routes route =
+                                await DBProviderRoutes().getRoute(nameRoute);
                             _polyLines.clear();
-                            _initialPosition = new LatLng(route.originLatitude, route.originLongitude);
-                            sendRequestSavedRoute(new LatLng(route.originLatitude, route.originLongitude), new LatLng(route.destinyLatitude, route.destinyLongitude));
+                            _initialPosition = new LatLng(
+                                route.originLatitude, route.originLongitude);
+                            sendRequestSavedRoute(
+                                new LatLng(route.originLatitude,
+                                    route.originLongitude),
+                                new LatLng(route.destinyLatitude,
+                                    route.destinyLongitude));
                           }
                         },
                       )),
                   Padding(
-                      padding: const EdgeInsets.only(right: 30, bottom: 5, top: 2),
+                      padding:
+                          const EdgeInsets.only(right: 30, bottom: 5, top: 2),
                       child: GestureDetector(
                         child: Column(
                           mainAxisSize: MainAxisSize.min,
@@ -126,19 +140,26 @@ class _MapState extends State<Map> with TickerProviderStateMixin {
                               size: 30.0,
                               color: Colors.white,
                             ),
-                            Text("Map points", style: TextStyle(color: Colors.white),),
+                            Text(
+                              "Map points",
+                              style: TextStyle(color: Colors.white),
+                            ),
                           ],
                         ),
-                        onTap: () async{
+                        onTap: () async {
                           String namePoint = await Navigator.push(
                               context,
-                              MaterialPageRoute(builder: (context) => PointsList(pointToSave: _initialPosition)));
-                          if(namePoint != "") {
-                            Point point = await DBProviderPoints().getPoint(namePoint);
+                              MaterialPageRoute(
+                                  builder: (context) => PointsList(
+                                      pointToSave: _initialPosition)));
+                          if (namePoint != "") {
+                            Point point =
+                                await DBProviderPoints().getPoint(namePoint);
                             _polyLines.clear();
                             _getUserLocation();
                             _markers.clear();
-                            sendRequestSavedRoute(_initialPosition, new LatLng(point.latitude, point.longitude));
+                            sendRequestSavedRoute(_initialPosition,
+                                new LatLng(point.latitude, point.longitude));
                           }
                         },
                       ))
@@ -146,7 +167,10 @@ class _MapState extends State<Map> with TickerProviderStateMixin {
               ),
             ),
             floatingActionButton: new FloatingActionButton(
-              child: Icon(Icons.settings, color:  Colors.white,),
+              child: Icon(
+                Icons.settings,
+                color: Colors.white,
+              ),
               onPressed: () {},
             ),
             floatingActionButtonLocation:
@@ -156,18 +180,18 @@ class _MapState extends State<Map> with TickerProviderStateMixin {
 
   callRoutesScreen(BuildContext context) async {
     var result = await Navigator.push(
-      context,
-      MaterialPageRoute(builder: (context) => RoutesList(origin: _initialPosition,
-          destiny: _markers.length > 1
-              ? LatLng(
-              _markers.last.position.latitude,
-              _markers.last.position.longitude)
-              : null)));
+        context,
+        MaterialPageRoute(
+            builder: (context) => RoutesList(
+                origin: _initialPosition,
+                destiny: _markers.length > 1
+                    ? LatLng(_markers.last.position.latitude,
+                        _markers.last.position.longitude)
+                    : null)));
 
-    if(result != null) {
+    if (result != null) {
       print(result.toString());
     }
-
   }
 
   void onCreated(GoogleMapController controller) {
@@ -254,6 +278,12 @@ class _MapState extends State<Map> with TickerProviderStateMixin {
   }
 
   void _getUserLocation() async {
+    bool permited = await requestLocationPermission();
+    if (!permited) {
+      Scaffold.of(context).showSnackBar(new SnackBar(
+        content: new Text("You need to give location permission to use this app"),
+      ));
+    }
     Position position = await Geolocator()
         .getCurrentPosition(desiredAccuracy: LocationAccuracy.high);
     List<Placemark> placemark = await Geolocator()
@@ -278,16 +308,14 @@ class _MapState extends State<Map> with TickerProviderStateMixin {
     _markers.clear();
     addMarker(origin, "Origin");
     addMarker(destiny, "Destiny");
-    String route = await _googleMapsServices.getRouteCoordinates(
-        origin, destiny);
+    String route =
+        await _googleMapsServices.getRouteCoordinates(origin, destiny);
     mapController.animateCamera(
       CameraUpdate.newCameraPosition(
-        CameraPosition(
-            target: origin, zoom: 14.0),
+        CameraPosition(target: origin, zoom: 14.0),
       ),
     );
     createRoute(route);
-
   }
 
   void addMarker(LatLng point, String title) {
@@ -299,5 +327,23 @@ class _MapState extends State<Map> with TickerProviderStateMixin {
       ),
       icon: BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueOrange),
     ));
+  }
+
+  Future<bool> _requestPermission(PermissionGroup permission) async {
+    var result = await _permissionHandler.requestPermissions([permission]);
+    if (result[permission] == PermissionStatus.granted) {
+      return true;
+    }
+    return false;
+  }
+
+  Future<bool> requestLocationPermission() async {
+    return _requestPermission(PermissionGroup.locationWhenInUse);
+  }
+
+  Future<bool> hasPermission(PermissionGroup permission) async {
+    var permissionStatus =
+        await _permissionHandler.checkPermissionStatus(permission);
+    return permissionStatus == PermissionStatus.granted;
   }
 }
