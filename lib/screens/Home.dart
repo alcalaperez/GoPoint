@@ -9,6 +9,7 @@ import 'package:gopoint/screens/ListRoutes.dart';
 import '../requests/google_maps_requests.dart';
 import 'ListPoints.dart';
 import 'package:permission_handler/permission_handler.dart';
+import 'package:gopoint/util/popup_menu.dart';
 
 class MyHomePage extends StatefulWidget {
   MyHomePage({Key key, this.title}) : super(key: key);
@@ -46,6 +47,12 @@ class _MapState extends State<Map> with TickerProviderStateMixin {
     Icons.directions_bike
   ];
   final PermissionHandler _permissionHandler = PermissionHandler();
+  String mapsTranstiMode = "driving";
+  IconData modeSelected = Icons.directions_car;
+
+  //walking
+  //bicycling
+  //transit
 
   @override
   void initState() {
@@ -55,6 +62,9 @@ class _MapState extends State<Map> with TickerProviderStateMixin {
 
   @override
   Widget build(BuildContext context) {
+    PopupMenu.context = context;
+    GlobalKey btnKey = GlobalKey();
+
     return _initialPosition == null
         ? Container(
             alignment: Alignment.center,
@@ -73,6 +83,8 @@ class _MapState extends State<Map> with TickerProviderStateMixin {
                   myLocationEnabled: true,
                   mapType: MapType.normal,
                   compassEnabled: true,
+                  myLocationButtonEnabled: true,
+                  zoomGesturesEnabled: true,
                   markers: _markers,
                   onCameraMove: _onCameraMove,
                   polylines: _polyLines,
@@ -168,10 +180,24 @@ class _MapState extends State<Map> with TickerProviderStateMixin {
             ),
             floatingActionButton: new FloatingActionButton(
               child: Icon(
-                Icons.settings,
+                modeSelected,
                 color: Colors.white,
+                key: btnKey,
               ),
-              onPressed: () {},
+              onPressed: () {
+                PopupMenu menu = PopupMenu(
+                    backgroundColor: Colors.black54,
+                    items: [
+                      MenuItem(title: 'Car', image: Icon(Icons.directions_car, color: Colors.white,)),
+                      MenuItem(title: 'Bike', image: Icon(Icons.directions_bike, color: Colors.white,)),
+                      MenuItem(title: 'Walking', image: Icon(Icons.directions_run, color: Colors.white,)),
+                      MenuItem(title: 'Public transport', image: Icon(Icons.directions_bus, color: Colors.white,))],
+                    onClickMenu: onClickMenu,
+                    onDismiss: onDismiss);
+
+                menu.show(widgetKey: btnKey);
+
+              },
             ),
             floatingActionButtonLocation:
                 FloatingActionButtonLocation.centerDocked,
@@ -300,7 +326,7 @@ class _MapState extends State<Map> with TickerProviderStateMixin {
     double longitude = _markers.last.position.longitude;
     LatLng destination = LatLng(latitude, longitude);
     String route = await _googleMapsServices.getRouteCoordinates(
-        _initialPosition, destination);
+        _initialPosition, destination, mapsTranstiMode);
     createRoute(route);
   }
 
@@ -309,7 +335,7 @@ class _MapState extends State<Map> with TickerProviderStateMixin {
     addMarker(origin, "Origin");
     addMarker(destiny, "Destiny");
     String route =
-        await _googleMapsServices.getRouteCoordinates(origin, destiny);
+        await _googleMapsServices.getRouteCoordinates(origin, destiny, mapsTranstiMode);
     mapController.animateCamera(
       CameraUpdate.newCameraPosition(
         CameraPosition(target: origin, zoom: 14.0),
@@ -345,5 +371,32 @@ class _MapState extends State<Map> with TickerProviderStateMixin {
     var permissionStatus =
         await _permissionHandler.checkPermissionStatus(permission);
     return permissionStatus == PermissionStatus.granted;
+  }
+
+  void onClickMenu(MenuItemProvider item) {
+    print('Click menu -> ${item.menuTitle}');
+    if(item.menuTitle == "Bike") {
+      modeSelected = Icons.directions_bike;
+      mapsTranstiMode = "bicycling";
+    } else if(item.menuTitle == "Car") {
+      modeSelected = Icons.directions_car;
+      mapsTranstiMode = "driving";
+    } else if(item.menuTitle == "Walking") {
+      modeSelected = Icons.directions_run;
+      mapsTranstiMode = "bicycling";
+    } else if(item.menuTitle == "Public transport") {
+      modeSelected = Icons.directions_bus;
+      mapsTranstiMode = "transit";
+
+    }
+    setState(() {});
+
+    //walking
+    //bicycling
+    //transit
+  }
+
+  void onDismiss() {
+    print('Menu is closed');
   }
 }

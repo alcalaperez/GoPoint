@@ -1,9 +1,9 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_platform_widgets/flutter_platform_widgets.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:gopoint/persistence/RoutesDatabaseHelper.dart';
 import 'package:gopoint/persistence/model/Route.dart';
-import 'package:path/path.dart';
 
 // MyApp is a StatefulWidget. This allows updating the state of the
 // widget when an item is removed.
@@ -22,39 +22,49 @@ class RoutesListState extends State<RoutesList> {
   TextEditingController _textFieldController = TextEditingController();
 
   _displayDialog(BuildContext context) async {
-    return showDialog(
-        context: context,
-        builder: (context) {
-          return AlertDialog(
-            title: Text('Route name'),
-            content: TextField(
-              controller: _textFieldController,
-              decoration: InputDecoration(hintText: "My route"),
-            ),
-            actions: <Widget>[
-              FlatButton(
-                child: new Text('Save'),
-                onPressed: () {
-                  Routes routeToInsert = new Routes(
-                      name: _textFieldController.text,
-                      originLatitude: widget.origin.latitude,
-                      originLongitude: widget.origin.longitude,
-                      destinyLatitude: widget.destiny.latitude,
-                      destinyLongitude: widget.destiny.longitude);
-                  DBProviderRoutes().newRoute(routeToInsert);
-                  _textFieldController.text = "";
-                  Navigator.of(context).pop();
-                },
-              ),
-              FlatButton(
-                child: new Text('Cancel'),
-                onPressed: () {
-                  Navigator.of(context).pop();
-                },
-              )
-            ],
-          );
-        });
+    showDialog(
+      context: context,
+      builder: (_) => PlatformAlertDialog(
+        title: PlatformText('Add a new route'),
+        content: new Row(
+          children: <Widget>[
+            new Expanded(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: <Widget>[
+                    new PlatformText("Save the current route"),
+                    new PlatformTextField(
+                      autofocus: true,
+                      controller: _textFieldController,
+                      android: (_) => MaterialTextFieldData(decoration: InputDecoration(
+                          labelText: 'Route Name', hintText: 'eg. My route'),
+                      ),
+                    )
+                  ],
+                ))
+          ],
+        ),
+        actions: <Widget>[
+          PlatformDialogAction(
+            child: PlatformText('Cancel'),
+            onPressed: () => Navigator.pop(context),
+          ),
+          PlatformDialogAction(
+              child: PlatformText('Save'),
+              onPressed: () {
+                Routes routeToInsert = new Routes(
+                    name: _textFieldController.text,
+                    originLatitude: widget.origin.latitude,
+                    originLongitude: widget.origin.longitude,
+                    destinyLatitude: widget.destiny.latitude,
+                    destinyLongitude: widget.destiny.longitude);
+                DBProviderRoutes().newRoute(routeToInsert);
+                _textFieldController.text = "";
+                Navigator.of(context).pop();
+              }),
+        ],
+      ),
+    );
   }
 
   Future<bool> confirmDismiss(BuildContext context, String action) {
@@ -62,17 +72,17 @@ class RoutesListState extends State<RoutesList> {
       context: context,
       barrierDismissible: true,
       builder: (BuildContext context) {
-        return AlertDialog(
-          title: Text('Do you want to delete this route?'),
+        return PlatformAlertDialog(
+          title: PlatformText('Do you want to delete this route?'),
           actions: <Widget>[
-            FlatButton(
-              child: const Text('Yes'),
+            PlatformDialogAction(
+              child: PlatformText('Yes'),
               onPressed: () {
                 Navigator.pop(context, true); // showDialog() returns true
               },
             ),
-            FlatButton(
-              child: const Text('No'),
+            PlatformDialogAction(
+              child: PlatformText('No'),
               onPressed: () {
                 Navigator.pop(context, false); // showDialog() returns false
               },
