@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_platform_widgets/flutter_platform_widgets.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:gopoint/persistence/RoutesDatabaseHelper.dart';
 import 'package:gopoint/persistence/PointsDatabaseHelper.dart';
+import 'package:gopoint/persistence/model/MapsDTO.dart';
 import 'package:gopoint/persistence/model/Point.dart';
 import 'package:gopoint/persistence/model/Route.dart';
 import 'package:gopoint/screens/ListRoutes.dart';
@@ -49,6 +51,9 @@ class _MapState extends State<Map> with TickerProviderStateMixin {
   final PermissionHandler _permissionHandler = PermissionHandler();
   String mapsTranstiMode = "driving";
   IconData modeSelected = Icons.directions_car;
+  String duration = "";
+  String startAddress = "Please select a point in the map (long press).";
+  String endAddress = "Press the middle button to change transport.";
 
   //walking
   //bicycling
@@ -75,6 +80,7 @@ class _MapState extends State<Map> with TickerProviderStateMixin {
         : Scaffold(
             body: Stack(
               children: <Widget>[
+                PlatformText("asdasdasds"),
                 GoogleMap(
                   initialCameraPosition:
                       CameraPosition(target: _initialPosition, zoom: 16.0),
@@ -89,6 +95,43 @@ class _MapState extends State<Map> with TickerProviderStateMixin {
                   onCameraMove: _onCameraMove,
                   polylines: _polyLines,
                 ),
+                Positioned(
+                    top: 55.0,
+                    right: 25.0,
+                    left: 25.0,
+                    child: Container(
+                        height: 80.0,
+                        width: double.infinity,
+                        decoration: BoxDecoration(
+                          borderRadius: BorderRadius.circular(3.0),
+                          color: Colors.orange,
+                          boxShadow: [
+                            BoxShadow(
+                                color: Colors.grey,
+                                offset: Offset(1.0, 5.0),
+                                blurRadius: 10,
+                                spreadRadius: 3)
+                          ],
+                        ),
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          crossAxisAlignment: CrossAxisAlignment.center,
+                          children: <Widget>[
+                            new Text(
+                              startAddress,
+                              style: TextStyle(color: Colors.white),
+                            ),
+                            new Text(
+                              endAddress,
+                              style: TextStyle(color: Colors.white),
+                            ),
+                            new Padding(
+                              padding: EdgeInsets.only(top: 8.0),
+                              child: Text(duration,
+                                  style: TextStyle(color: Colors.white)),
+                            ),
+                          ],
+                        ))),
               ],
             ),
             bottomNavigationBar: new BottomAppBar(
@@ -188,15 +231,35 @@ class _MapState extends State<Map> with TickerProviderStateMixin {
                 PopupMenu menu = PopupMenu(
                     backgroundColor: Colors.black54,
                     items: [
-                      MenuItem(title: 'Car', image: Icon(Icons.directions_car, color: Colors.white,)),
-                      MenuItem(title: 'Bike', image: Icon(Icons.directions_bike, color: Colors.white,)),
-                      MenuItem(title: 'Walking', image: Icon(Icons.directions_run, color: Colors.white,)),
-                      MenuItem(title: 'Public transport', image: Icon(Icons.directions_bus, color: Colors.white,))],
+                      MenuItem(
+                          title: 'Car',
+                          image: Icon(
+                            Icons.directions_car,
+                            color: Colors.white,
+                          )),
+                      MenuItem(
+                          title: 'Bike',
+                          image: Icon(
+                            Icons.directions_bike,
+                            color: Colors.white,
+                          )),
+                      MenuItem(
+                          title: 'Walking',
+                          image: Icon(
+                            Icons.directions_run,
+                            color: Colors.white,
+                          )),
+                      MenuItem(
+                          title: 'Public transport',
+                          image: Icon(
+                            Icons.directions_bus,
+                            color: Colors.white,
+                          ))
+                    ],
                     onClickMenu: onClickMenu,
                     onDismiss: onDismiss);
 
                 menu.show(widgetKey: btnKey);
-
               },
             ),
             floatingActionButtonLocation:
@@ -243,8 +306,14 @@ class _MapState extends State<Map> with TickerProviderStateMixin {
     });
   }
 
-  void createRoute(String encondedPoly) {
+  void createRoute(String encondedPoly, String duration, String distance,
+      String startAddress, String endAddress) {
     setState(() {
+      this.startAddress =
+          startAddress.split(",")[0] + "," + startAddress.split(",")[1];
+      this.endAddress =
+          endAddress.split(",")[0] + "," + endAddress.split(",")[1];
+      this.duration = "Duration: " + duration + "     Distance: " + distance;
       _polyLines.add(Polyline(
           polylineId: PolylineId(_lastPosition.toString()),
           width: 6,
@@ -307,7 +376,8 @@ class _MapState extends State<Map> with TickerProviderStateMixin {
     bool permited = await requestLocationPermission();
     if (!permited) {
       Scaffold.of(context).showSnackBar(new SnackBar(
-        content: new Text("You need to give location permission to use this app"),
+        content:
+            new Text("You need to give location permission to use this app"),
       ));
     }
     Position position = await Geolocator()
@@ -325,23 +395,25 @@ class _MapState extends State<Map> with TickerProviderStateMixin {
     double latitude = _markers.last.position.latitude;
     double longitude = _markers.last.position.longitude;
     LatLng destination = LatLng(latitude, longitude);
-    String route = await _googleMapsServices.getRouteCoordinates(
+    MapsDTO mapsDTO = await _googleMapsServices.getRouteCoordinates(
         _initialPosition, destination, mapsTranstiMode);
-    createRoute(route);
+    createRoute(mapsDTO.polylines, mapsDTO.time, mapsDTO.distance,
+        mapsDTO.startAddress, mapsDTO.endAddress);
   }
 
   void sendRequestSavedRoute(LatLng origin, LatLng destiny) async {
     _markers.clear();
     addMarker(origin, "Origin");
     addMarker(destiny, "Destiny");
-    String route =
-        await _googleMapsServices.getRouteCoordinates(origin, destiny, mapsTranstiMode);
+    MapsDTO mapsDTO = await _googleMapsServices.getRouteCoordinates(
+        origin, destiny, mapsTranstiMode);
     mapController.animateCamera(
       CameraUpdate.newCameraPosition(
         CameraPosition(target: origin, zoom: 14.0),
       ),
     );
-    createRoute(route);
+    createRoute(mapsDTO.polylines, mapsDTO.time, mapsDTO.distance,
+        mapsDTO.startAddress, mapsDTO.endAddress);
   }
 
   void addMarker(LatLng point, String title) {
@@ -375,19 +447,18 @@ class _MapState extends State<Map> with TickerProviderStateMixin {
 
   void onClickMenu(MenuItemProvider item) {
     print('Click menu -> ${item.menuTitle}');
-    if(item.menuTitle == "Bike") {
+    if (item.menuTitle == "Bike") {
       modeSelected = Icons.directions_bike;
       mapsTranstiMode = "bicycling";
-    } else if(item.menuTitle == "Car") {
+    } else if (item.menuTitle == "Car") {
       modeSelected = Icons.directions_car;
       mapsTranstiMode = "driving";
-    } else if(item.menuTitle == "Walking") {
+    } else if (item.menuTitle == "Walking") {
       modeSelected = Icons.directions_run;
-      mapsTranstiMode = "bicycling";
-    } else if(item.menuTitle == "Public transport") {
+      mapsTranstiMode = "walking";
+    } else if (item.menuTitle == "Public transport") {
       modeSelected = Icons.directions_bus;
       mapsTranstiMode = "transit";
-
     }
     setState(() {});
 
