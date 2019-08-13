@@ -125,7 +125,7 @@ class RoutesListState extends State<RoutesList> {
             if (snapshot.hasData) {
               return ListView.separated(
                 separatorBuilder: (context, index) => Divider(
-                      color: Colors.black,
+                    height: 0.0
                     ),
                 itemCount: snapshot.data.length,
                 itemBuilder: (BuildContext context, int index) {

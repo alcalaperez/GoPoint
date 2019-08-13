@@ -80,7 +80,6 @@ class _MapState extends State<Map> with TickerProviderStateMixin {
         : Scaffold(
             body: Stack(
               children: <Widget>[
-                PlatformText("asdasdasds"),
                 GoogleMap(
                   initialCameraPosition:
                       CameraPosition(target: _initialPosition, zoom: 16.0),
@@ -314,6 +313,7 @@ class _MapState extends State<Map> with TickerProviderStateMixin {
       this.endAddress =
           endAddress.split(",")[0] + "," + endAddress.split(",")[1];
       this.duration = "Duration: " + duration + "     Distance: " + distance;
+      _polyLines.clear();
       _polyLines.add(Polyline(
           polylineId: PolylineId(_lastPosition.toString()),
           width: 6,
@@ -460,8 +460,12 @@ class _MapState extends State<Map> with TickerProviderStateMixin {
       modeSelected = Icons.directions_bus;
       mapsTranstiMode = "transit";
     }
+
     setState(() {});
 
+    if(_markers.length > 0) {
+      sendRequest();
+    }
     //walking
     //bicycling
     //transit
