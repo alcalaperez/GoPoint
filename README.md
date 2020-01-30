@@ -1,6 +1,14 @@
-# gopoint
+# gopoint (Flutter)
+Update of one of my first apps https://play.google.com/store/apps/details?id=com.goPoint.mapainicial&hl=en where you can use the next google maps features:
+* Google Maps API
+* Select a point in the map and check the route
+* Save the route and the point pressed
+* Internal SQLite DB
+* Working in iOS and Android
+* You should add the API KEY in the manifest and in the request to the Google API
 
-GoPoint
+## Demo
+https://appetize.io/app/a0ygempdx8mk93v7qg8mdhjddc?device=nexus5&scale=75&orientation=portrait&osVersion=8.1
 
 ## Getting Started
 
