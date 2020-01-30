@@ -32,7 +32,6 @@ class RoutesListState extends State<RoutesList> {
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   children: <Widget>[
-                    new PlatformText("Save the current route"),
                     new PlatformTextField(
                       autofocus: true,
                       controller: _textFieldController,
@@ -61,6 +60,7 @@ class RoutesListState extends State<RoutesList> {
                 DBProviderRoutes().newRoute(routeToInsert);
                 _textFieldController.text = "";
                 Navigator.of(context).pop();
+                setState(() {});
               }),
         ],
       ),

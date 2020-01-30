@@ -31,7 +31,6 @@ class PointsListState extends State<PointsList> {
                 child: Column(
                 mainAxisSize: MainAxisSize.min,
               children: <Widget>[
-                new PlatformText("Add your current position as a new point"),
                 new PlatformTextField(
                   autofocus: true,
                   controller: _textFieldController,
@@ -58,6 +57,7 @@ class PointsListState extends State<PointsList> {
                 DBProviderPoints().newPoint(point);
                 _textFieldController.text = "";
                 Navigator.of(context).pop();
+                setState(() {});
               }),
         ],
       ),
