@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_platform_widgets/flutter_platform_widgets.dart';
+import 'package:geocoding/geocoding.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:gopoint/persistence/RoutesDatabaseHelper.dart';
@@ -38,7 +38,7 @@ class _MapState extends State<Map> with TickerProviderStateMixin {
   GoogleMapController mapController;
   GoogleMapsServices _googleMapsServices = GoogleMapsServices();
   TextEditingController locationController = TextEditingController();
-  final TextEditingestinationController = TextEditingController();
+  final textEditingDestinationController = TextEditingController();
   static LatLng _initialPosition;
   LatLng _lastPosition = _initialPosition;
   final Set<Marker> _markers = {};
@@ -48,8 +48,8 @@ class _MapState extends State<Map> with TickerProviderStateMixin {
     Icons.directions_walk,
     Icons.directions_bike
   ];
-  final PermissionHandler _permissionHandler = PermissionHandler();
-  String mapsTranstiMode = "driving";
+
+  String mapsTransitMode = "driving";
   IconData modeSelected = Icons.directions_car;
   String duration = "";
   String startAddress = "Please select a point in the map (long press).";
@@ -373,17 +373,15 @@ class _MapState extends State<Map> with TickerProviderStateMixin {
   }
 
   void _getUserLocation() async {
-    bool permited = await requestLocationPermission();
-    if (!permited) {
+    bool permitted = await requestLocationPermission();
+    if (!permitted) {
       Scaffold.of(context).showSnackBar(new SnackBar(
         content:
             new Text("You need to give location permission to use this app"),
       ));
     }
-    Position position = await Geolocator()
-        .getCurrentPosition(desiredAccuracy: LocationAccuracy.high);
-    List<Placemark> placemark = await Geolocator()
-        .placemarkFromCoordinates(position.latitude, position.longitude);
+    Position position = await getCurrentPosition(desiredAccuracy: LocationAccuracy.high);
+    List<Placemark> placemark = await placemarkFromCoordinates(position.latitude, position.longitude);
     setState(() {
       _initialPosition = LatLng(position.latitude, position.longitude);
       locationController.text = placemark[0].name;
@@ -396,7 +394,7 @@ class _MapState extends State<Map> with TickerProviderStateMixin {
     double longitude = _markers.last.position.longitude;
     LatLng destination = LatLng(latitude, longitude);
     MapsDTO mapsDTO = await _googleMapsServices.getRouteCoordinates(
-        _initialPosition, destination, mapsTranstiMode);
+        _initialPosition, destination, mapsTransitMode);
     createRoute(mapsDTO.polylines, mapsDTO.time, mapsDTO.distance,
         mapsDTO.startAddress, mapsDTO.endAddress);
   }
@@ -406,7 +404,7 @@ class _MapState extends State<Map> with TickerProviderStateMixin {
     addMarker(origin, "Origin");
     addMarker(destiny, "Destiny");
     MapsDTO mapsDTO = await _googleMapsServices.getRouteCoordinates(
-        origin, destiny, mapsTranstiMode);
+        origin, destiny, mapsTransitMode);
     mapController.animateCamera(
       CameraUpdate.newCameraPosition(
         CameraPosition(target: origin, zoom: 14.0),
@@ -427,38 +425,35 @@ class _MapState extends State<Map> with TickerProviderStateMixin {
     ));
   }
 
-  Future<bool> _requestPermission(PermissionGroup permission) async {
-    var result = await _permissionHandler.requestPermissions([permission]);
-    if (result[permission] == PermissionStatus.granted) {
+  Future<bool> _requestPermission(Permission permission) async {
+    if (await permission.request().isGranted) {
       return true;
     }
     return false;
   }
 
   Future<bool> requestLocationPermission() async {
-    return _requestPermission(PermissionGroup.locationWhenInUse);
+    return _requestPermission(Permission.locationWhenInUse);
   }
 
-  Future<bool> hasPermission(PermissionGroup permission) async {
-    var permissionStatus =
-        await _permissionHandler.checkPermissionStatus(permission);
-    return permissionStatus == PermissionStatus.granted;
+  Future<bool> hasPermission(Permission permission) async {
+    return permission.isGranted;
   }
 
   void onClickMenu(MenuItemProvider item) {
     print('Click menu -> ${item.menuTitle}');
     if (item.menuTitle == "Bike") {
       modeSelected = Icons.directions_bike;
-      mapsTranstiMode = "bicycling";
+      mapsTransitMode = "bicycling";
     } else if (item.menuTitle == "Car") {
       modeSelected = Icons.directions_car;
-      mapsTranstiMode = "driving";
+      mapsTransitMode = "driving";
     } else if (item.menuTitle == "Walking") {
       modeSelected = Icons.directions_run;
-      mapsTranstiMode = "walking";
+      mapsTransitMode = "walking";
     } else if (item.menuTitle == "Public transport") {
       modeSelected = Icons.directions_bus;
-      mapsTranstiMode = "transit";
+      mapsTransitMode = "transit";
     }
 
     setState(() {});

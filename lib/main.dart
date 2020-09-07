@@ -13,7 +13,7 @@ class MyApp extends StatelessWidget {
       theme: ThemeData(
         primarySwatch: Colors.orange,
           primaryTextTheme: TextTheme(
-              title: TextStyle(
+              headline6: TextStyle(
                   color: Colors.white
               )
           )

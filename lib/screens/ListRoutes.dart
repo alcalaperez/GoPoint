@@ -35,7 +35,7 @@ class RoutesListState extends State<RoutesList> {
                     new PlatformTextField(
                       autofocus: true,
                       controller: _textFieldController,
-                      android: (_) => MaterialTextFieldData(decoration: InputDecoration(
+                      material: (context, platform) => MaterialTextFieldData(decoration: InputDecoration(
                           labelText: 'Route Name', hintText: 'eg. My route'),
                       ),
                     )

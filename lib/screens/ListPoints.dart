@@ -34,7 +34,7 @@ class PointsListState extends State<PointsList> {
                 new PlatformTextField(
                   autofocus: true,
                   controller: _textFieldController,
-                  android: (_) => MaterialTextFieldData(decoration: InputDecoration(
+                  material: (context, platform) => MaterialTextFieldData(decoration: InputDecoration(
                       labelText: 'Point Name', hintText: 'eg. My house'),
                   ),
                 )
